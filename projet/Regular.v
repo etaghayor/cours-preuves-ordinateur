@@ -64,6 +64,10 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma nullable_ok r : is_nullable r = true <-> lang r [].
  Proof.
+    split.
+      - intros.  induction r; firstorder.
+        + unfold lang.  unfold Lang.void. discriminate.
+        + unfold lang. unfold Lang.singleton. 
  Admitted.
 
  Lemma nullable_spec r : reflect (lang r []) (is_nullable r).

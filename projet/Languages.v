@@ -116,7 +116,6 @@ Proof.
     - intros. unfold cat. exists [], x. firstorder.
 Qed.
 
-Search "++". 
 Lemma cat_eps_r L : L · ε == L.
 Proof.
   intro. split; intros; firstorder.
@@ -138,9 +137,10 @@ Lemma star_eqn L : L★ == ε ∪ L · L ★.
 Proof.
   intro. split; intros.
     - firstorder. induction x0; firstorder.
-    -  unfold union in H. destruct H.
-      + exists 0. firstorder.
-      + firstorder.
+    - destruct H.
+      + unfold epsilon in H. rewrite H. exists 0. firstorder.
+      + unfold cat in H.  
+
 Admitted.
 
 Lemma star_void : ∅ ★ == ε.
@@ -175,22 +175,24 @@ Qed.
 Lemma power_app n m y z L :
  (L^n) y -> (L^m) z -> (L^(n+m)) (y++z).
 Proof.
-  intros.     
+  intros. auto. admit.
 Admitted.
 
 Lemma star_star L : (L★)★ == L★.
 Proof.
-  intro. split; intros; firstorder.
-    - admit.
-    - exists 1. apply cat_eps_r. exists x0. assumption.     
+  intro. split; intros.
+    - apply star_eqn . apply star_eqn in H as H2.   destruct H2.
+      +  left. assumption.
+      +  admit.
+    - firstorder. exists 1. apply cat_eps_r. exists x0. assumption.     
 Admitted.
 
 Lemma cat_star L : (L★)·(L★) == L★.
 Proof.
-  intro. split; intros; firstorder.
-    - admit.
-    - unfold cat. exists []. exists x. firstorder. exists 0. firstorder. 
-Admitted.
+  intro. split; intros.
+    - apply star_star. apply star_eqn. right. rewrite star_star. assumption.
+    - exists []. exists x. firstorder. exists 0. firstorder. 
+Qed.
 
 (** ** Derivative of a language : definition **)
 
@@ -212,15 +214,22 @@ Qed.
 Lemma derivative_cat_null L L' a : L [] ->
   derivative (L · L') [a] == (derivative L [a] · L') ∪ derivative L' [a].
 Proof.
-  intro. split; intros; firstorder.
-    -   unfold cat.  
+  intro. split; intros; auto.
+    - unfold union. right. firstorder. unfold derivative. simpl in *. rewrite H0.
+      admit.
+    - firstorder. unfold derivative in *. unfold cat. exists ([a]++x0),x1.
+      split.
+        + rewrite H0. simpl. reflexivity.
+        + split; auto.
+      
 Admitted.
 
 Lemma derivative_cat_nonnull L L' a : ~L [] ->
   derivative (L · L') [a] == derivative L [a] · L'.
 Proof.
   intro. split; intros.
-    - firstorder.  unfold cat. unfold derivative in *.
+  - firstorder. unfold derivative in *. unfold cat. admit.
+  - admit.
 Admitted.
 
 Lemma derivative_star L a :
