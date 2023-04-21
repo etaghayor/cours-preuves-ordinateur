@@ -65,9 +65,31 @@ Module Regexps (Letter : FiniteOrderedType).
  Lemma nullable_ok r : is_nullable r = true <-> lang r [].
  Proof.
     split.
-      - intros.  induction r; firstorder.
+      - intros. induction r; firstorder.
         + unfold lang.  unfold Lang.void. discriminate.
-        + unfold lang. unfold Lang.singleton. 
+        + unfold lang. unfold Lang.singleton. discriminate. 
+        + simpl in *. Search "&&". apply andb_prop in H. destruct H. rewrite H in IHr1.
+        rewrite H0 in IHr2. firstorder.
+        + simpl in *.  unfold Lang.star. exists 0. simpl. firstorder.
+        + simpl in *. Search "||". apply orb_prop in H. destruct H.
+          * rewrite H in IHr1. firstorder.
+          * rewrite H in IHr2. firstorder.
+        + simpl in *. apply andb_prop in H. destruct H. rewrite H in IHr1.
+        rewrite H0 in IHr2. firstorder.
+        + simpl in *. apply andb_prop in H. destruct H. rewrite H in IHr1.
+        rewrite H0 in IHr2. firstorder.
+        + simpl in *. unfold negb in H. Search "if". destruct (is_nullable r) eqn:H3.
+          * discriminate.
+          * unfold Lang.comp. Search "~". apply neg_false. split.
+            ** intros. admit.
+            ** auto.
+      - intros. induction r; auto.
+        + inversion H.
+        + destruct H as [w1 [w2 [H1 [H2 H3]]]]. symmetry in H1. apply  app_eq_nil in H1. destruct H1.
+          rewrite H in H2. rewrite H0 in H3. firstorder.  admit.
+        + admit.
+        + admit.
+        + admit.   
  Admitted.
 
  Lemma nullable_spec r : reflect (lang r []) (is_nullable r).
@@ -111,11 +133,27 @@ Module Regexps (Letter : FiniteOrderedType).
  Infix "//" := deriv (at level 40) : re_scope.
 
  Lemma deriv1_ok r a : lang (r/a) == Lang.derivative (lang r) [a].
- Proof.
- Admitted.
+ Proof. 
+  intro. split.
+    - intros. unfold Lang.derivative. simpl in *. induction r; firstorder.
+      + simpl in *. case (LetterB.eqb_spec a t) in H.
+        * rewrite H. rewrite <- e. subst. admit.
+        * simpl in *. firstorder.
+      + simpl in *. unfold Lang.cat. exists (a::x), []. firstorder.
+        * simpl. rewrite app_nil_r. reflexivity.
+        * apply IHr1. firstorder. admit.
+        *   admit.
+      + admit.
+      + admit.
+      + admit.
+    - intros. unfold Lang.derivative in H. simpl in *. induction r.
+        
+   Admitted.
 
  Lemma deriv_ok r w : lang (r//w) == Lang.derivative (lang r) w.
  Proof.
+    intro. split.
+      - intros. unfold Lang.derivative. induction r; firstorder.  
  Admitted.
 
  Lemma deriv1_ok' r a w : lang (r/a) w <-> lang r (a::w).
@@ -147,20 +185,36 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma deriv_void w : Void // w = Void.
  Proof.
- Admitted.
+  induction w; auto.
+ Qed.
 
  Lemma deriv_epsilon w : In (Epsilon // w) [Void; Epsilon].
  Proof.
- Admitted.
+  induction w.
+    - simpl. right. left. reflexivity.
+    - simpl in *. left. rewrite deriv_void. reflexivity.
+ Qed.
 
  Lemma deriv_letter a w :
   In (Letter a // w) [Void; Epsilon; Letter a].
  Proof.
+  induction w.
+    - simpl. right. right. left. reflexivity.
+    - simpl. destruct (LetterB.eqb_spec a a0) as [Heq | Hneq].
+      +  right. left. rewrite Heq. case LetterB.eqb_spec; intros.
+        * admit. 
+        * contradiction.
+      + left. case LetterB.eqb_spec; intros.
+       * symmetry in e. contradiction.
+       * symmetry. apply deriv_void.
  Admitted.
 
  Lemma deriv_or r s w :
   (Or r s) // w = Or (r//w) (s//w).
  Proof.
+  
+
+  
  Admitted.
 
  Lemma deriv_and r s w :
@@ -209,55 +263,100 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma or_comm r s : Or r s === Or s r.
  Proof.
- Admitted.
+  intro. split; intros; simpl in *; unfold Lang.union in *;
+  destruct H; [right | left | right | left]; assumption.
+ Qed.
 
  Lemma or_assoc r s t : Or (Or r s) t === Or r (Or s t).
  Proof.
- Admitted.
+  intro. split; intros.
+    - simpl in *. unfold Lang.union in *. destruct H. destruct H.
+      + left. assumption.
+      + right. left. assumption.
+      + right. right. assumption.
+    - simpl in *. unfold Lang.union in *. destruct H. 
+      + left. left. assumption.
+      + destruct H.
+        * left. right. assumption.
+        * right. assumption.
+ Qed.
 
  Lemma or_idem r : Or r r === r.
  Proof.
- Admitted.
+  intro. split; intros; simpl in *.
+    - unfold Lang.union in H. destruct H; assumption.
+    - unfold Lang.union. left. assumption.
+ Qed.
 
  Lemma or_void_l r : Or Void r === r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *.
+    - unfold Lang.union in H. destruct H; firstorder.
+    - unfold Lang.union. right. assumption.
+ Qed.
 
  Lemma or_void_r r : Or r Void === r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *.
+  - unfold Lang.union in H. destruct H; firstorder.
+  - unfold Lang.union. left. assumption.
+ Qed.
 
  Lemma and_comm r s : And r s === And s r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; 
+ unfold Lang.inter in *; split; firstorder.
+ Qed.
 
  Lemma and_assoc r s t : And (And r s) t === And r (And s t).
  Proof.
- Admitted.
+  intro. split; intros; simpl in *; firstorder.
+ Qed.
 
  Lemma and_idem r : And r r === r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+ Qed.
 
  Lemma cat_void_l r : Cat Void r === Void.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+ Qed.
 
  Lemma cat_void_r r : Cat r Void === Void.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+ Qed.
 
  Lemma cat_eps_l r : Cat Epsilon r === r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+  - subst. rewrite H0. simpl. assumption.
+  - unfold Lang.cat. exists [],x. firstorder.
+ Qed.
 
  Lemma cat_eps_r r : Cat r Epsilon === r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+ - subst. rewrite H1. rewrite app_nil_r. assumption.
+ - unfold Lang.cat. exists x,[]. firstorder. rewrite app_nil_r. reflexivity.
+ Qed.
 
  Lemma cat_assoc r s t : Cat (Cat r s ) t === Cat r (Cat s t).
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder; unfold Lang.cat in *.
+  - exists x2,(x3++x1). split.
+    + subst. apply app_assoc_reverse.
+    + split.
+      * assumption.
+      * exists x3,x1; firstorder. 
+  - exists (x0++x2),x3. split.
+    + subst. rewrite app_assoc_reverse. reflexivity.
+    + split.
+      * exists x0,x2; firstorder.
+      * assumption.
+ Qed.
+
 
  Lemma star_is_or r : Star r === Or Epsilon (Cat r (Star r)).
  Proof.
