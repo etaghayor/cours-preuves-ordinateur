@@ -66,30 +66,36 @@ Module Regexps (Letter : FiniteOrderedType).
  Proof.
     split.
       - intros. induction r; firstorder.
-        + unfold lang.  unfold Lang.void. discriminate.
-        + unfold lang. unfold Lang.singleton. discriminate. 
-        + simpl in *. Search "&&". apply andb_prop in H. destruct H. rewrite H in IHr1.
+        + discriminate.
+        + discriminate. 
+        + simpl in *. apply andb_prop in H. destruct H. rewrite H in IHr1.
         rewrite H0 in IHr2. firstorder.
-        + simpl in *.  unfold Lang.star. exists 0. simpl. firstorder.
-        + simpl in *. Search "||". apply orb_prop in H. destruct H.
+        + simpl in *. exists 0. simpl. firstorder.
+        + simpl in *. apply orb_prop in H. destruct H.
           * rewrite H in IHr1. firstorder.
           * rewrite H in IHr2. firstorder.
         + simpl in *. apply andb_prop in H. destruct H. rewrite H in IHr1.
         rewrite H0 in IHr2. firstorder.
         + simpl in *. apply andb_prop in H. destruct H. rewrite H in IHr1.
         rewrite H0 in IHr2. firstorder.
-        + simpl in *. unfold negb in H. Search "if". destruct (is_nullable r) eqn:H3.
+        + simpl in *. unfold negb in H. destruct (is_nullable r) eqn:H3.
           * discriminate.
-          * unfold Lang.comp. Search "~". apply neg_false. split.
+          * unfold Lang.comp. apply neg_false. split.
             ** intros. admit.
             ** auto.
       - intros. induction r; auto.
         + inversion H.
-        + destruct H as [w1 [w2 [H1 [H2 H3]]]]. symmetry in H1. apply  app_eq_nil in H1. destruct H1.
-          rewrite H in H2. rewrite H0 in H3. firstorder.  admit.
-        + admit.
-        + admit.
-        + admit.   
+        +  simpl in *. firstorder. symmetry in H.
+           apply app_eq_nil in H. firstorder. subst. firstorder. rewrite H,H2.
+           reflexivity.
+        + simpl in *. firstorder.
+          * rewrite H0. apply orb_true_l.
+          * rewrite H0. apply orb_true_r.
+        + simpl in *. firstorder. rewrite H1,H2. reflexivity. 
+        + simpl in *. unfold Lang.comp in H. unfold "~" in H.
+        unfold negb. destruct (is_nullable r) eqn:H1; auto.
+        generalize diff_false_true. intros. unfold "<>" in H0.
+        symmetry in H1. rewrite H1. admit.  
  Admitted.
 
  Lemma nullable_spec r : reflect (lang r []) (is_nullable r).
@@ -141,8 +147,8 @@ Module Regexps (Letter : FiniteOrderedType).
         * simpl in *. firstorder.
       + simpl in *. unfold Lang.cat. exists (a::x), []. firstorder.
         * simpl. rewrite app_nil_r. reflexivity.
-        * apply IHr1. firstorder. admit.
-        *   admit.
+        * apply IHr1.  admit.
+        * admit.
       + admit.
       + admit.
       + admit.
@@ -153,7 +159,8 @@ Module Regexps (Letter : FiniteOrderedType).
  Lemma deriv_ok r w : lang (r//w) == Lang.derivative (lang r) w.
  Proof.
     intro. split.
-      - intros. unfold Lang.derivative. induction r; firstorder.  
+      - intros. unfold Lang.derivative. induction r; firstorder.
+        + simpl in *. unfold Lang.void.  
  Admitted.
 
  Lemma deriv1_ok' r a w : lang (r/a) w <-> lang r (a::w).
@@ -162,6 +169,9 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma deriv_ok' r w w' : lang (r//w) w' <-> lang r (w++w').
  Proof.
+  split.
+    - intros. induction r; simpl in *.
+      + unfold Lang.void.  
  Admitted.
 
 (** ** Matching : is a word in the language of a regexp ? *)
@@ -360,22 +370,43 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma star_is_or r : Star r === Or Epsilon (Cat r (Star r)).
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+  - unfold Lang.cat. unfold Lang.union. apply Lang.star_eqn. firstorder. 
+  - exists 0. firstorder. 
+  - apply Lang.star_eqn. unfold Lang.union. right. unfold Lang.cat. 
+  exists x0,x1. split.
+    + assumption.
+    + split.
+      * assumption.
+      * exists x2. assumption.
+Qed.
 
  Lemma star_void : Star Void === Epsilon.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *. apply Lang.star_void in H.
+  - assumption. 
+  - apply Lang.star_void. assumption.    
+ Qed.
 
  Lemma star_epsilon : Star Epsilon === Epsilon.
  Proof.
- Admitted.
+  intro. split; intros; simpl in *; firstorder.
+    - apply Lang.power_eps in H. assumption.
+    - exists 0. firstorder.  
+ Qed.
 
  Lemma star_star r : Star (Star r) === Star r.
  Proof.
- Admitted.
+ intro. split; intros; simpl in *; firstorder.
+  - apply Lang.star_star. exists x0. assumption.
+  - apply Lang.star_star. exists x0. assumption.  
+ Qed.
 
  Lemma cat_star r : Cat (Star r) (Star r) === Star r.
  Proof.
+ intro. split; intros; simpl in *.
+  - firstorder. apply Lang.power_app.  subst. exists (x3 + x2). admit.
+  - firstorder. unfold Lang.cat. exists [],x; firstorder. exists 0. firstorder.
  Admitted.
 
 End Regexps.
