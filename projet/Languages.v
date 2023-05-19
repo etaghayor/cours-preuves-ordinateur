@@ -136,11 +136,16 @@ Lemma power_app n m y z L :
  (L^n) y -> (L^m) z -> (L^(n+m)) (y++z).
 Proof.
   intros. induction n.
-    - simpl in *. rewrite H. simpl. assumption.
-    - simpl in *. unfold cat in *. destruct H. destruct H. destruct H.
+    - simpl in *. unfold epsilon. rewrite H. simpl. assumption.
+    - simpl in *. firstorder.
+      + unfold cat. exists x,(x0++z); firstorder.
+        * subst. apply app_assoc_reverse.
+        * subst. admit. 
+
+    (* unfold cat in *. destruct H. destruct H. destruct H.
       destruct H1. subst. exists x,(x0++z); firstorder.
         + apply app_assoc_reverse.
-        + admit.   
+        +   admit.    *)
        
 Admitted.
 
@@ -191,9 +196,7 @@ Qed.
 Lemma star_star L : (L★)★ == L★.
 Proof.
   intro. split; intros. 
-    - apply star_eqn in H as H2. destruct H2.
-      + exists 0. firstorder.
-      + unfold cat in H0. firstorder. subst. admit.   
+    - firstorder. unfold star in H. 
 
     - firstorder. exists 1. apply cat_eps_r. exists x0. assumption.     
 Admitted.
@@ -225,13 +228,11 @@ Qed.
 Lemma derivative_cat_null L L' a : L [] ->
   derivative (L · L') [a] == (derivative L [a] · L') ∪ derivative L' [a].
 Proof.
-  intro. split; intros; auto.
-    - unfold union. firstorder. unfold cat. unfold derivative. left.
-      Search ([_]). destruct x0.
-        + simpl in *. destruct x1 as [|u v]; admit.
+  intro. split; intros; firstorder.
+    - unfold union, cat, derivative.
+    right. rewrite H0. destruct x0.
+        + simpl in *. assumption.
         + simpl in *. admit.
-    (* rewrite H0. exists [],x1.
-    right. firstorder. unfold derivative. simpl in *. rewrite H0. *)      
     - firstorder. unfold derivative in *. unfold cat. exists ([a]++x0),x1.
       split.
         + rewrite H0. simpl. reflexivity.
@@ -242,7 +243,7 @@ Lemma derivative_cat_nonnull L L' a : ~L [] ->
   derivative (L · L') [a] == derivative L [a] · L'.
 Proof.
   intro. split; intros.
-  - admit.
+  - unfold cat, derivative in *. admit.
   - apply derivative_cat_null.
     + admit.
     + unfold cat in *. unfold derivative in *. unfold union. left. assumption.

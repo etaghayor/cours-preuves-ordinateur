@@ -1,6 +1,7 @@
 Require Export Languages.
 Import ListNotations.
 
+Require Import Btauto.
 (** * Regular expressions (regexps) on finite ordered letters *)
 
 Module Type FiniteOrderedType.
@@ -86,19 +87,20 @@ Module Regexps (Letter : FiniteOrderedType).
       - intros. induction r; auto.
         + inversion H.
         +  simpl in *. firstorder. symmetry in H.
-           apply app_eq_nil in H. firstorder. subst. firstorder. rewrite H,H2.
-           reflexivity.
+           apply app_eq_nil in H. firstorder. subst. firstorder. 
         + simpl in *. firstorder.
           * rewrite H0. apply orb_true_l.
           * rewrite H0. apply orb_true_r.
-        + simpl in *. firstorder. rewrite H1,H2. reflexivity. 
+        + simpl in *. firstorder.
         + simpl in *. unfold Lang.comp in H. unfold "~" in H.
         unfold negb. destruct (is_nullable r) eqn:H1; auto.
+        exfalso. apply H. destruct r; try easy.
+          * firstorder.  
         generalize diff_false_true. intros. unfold "<>" in H0.
-        symmetry in H1. rewrite H1. admit.  
+        symmetry in H1. admit.  
  Admitted.
 
- Lemma nullable_spec r : reflect (lang r []) (is_nullable r).
+Lemma nullable_spec r : reflect (lang r []) (is_nullable r).
  Proof.
  apply iff_reflect. symmetry. apply nullable_ok.
  Qed.
@@ -141,20 +143,22 @@ Module Regexps (Letter : FiniteOrderedType).
  Lemma deriv1_ok r a : lang (r/a) == Lang.derivative (lang r) [a].
  Proof. 
   intro. split.
-    - intros. unfold Lang.derivative. simpl in *. induction r; firstorder.
+    - intros. unfold Lang.derivative. 
+    
+    induction r; firstorder.
       + simpl in *. case (LetterB.eqb_spec a t) in H.
         * rewrite H. rewrite <- e. subst. admit.
         * simpl in *. firstorder.
       + simpl in *. unfold Lang.cat. exists (a::x), []. firstorder.
         * simpl. rewrite app_nil_r. reflexivity.
-        * apply IHr1.  admit.
+        * apply IHr1. subst.   admit.
         * admit.
       + admit.
       + admit.
       + admit.
     - intros. unfold Lang.derivative in H. simpl in *. induction r.
         
-   Admitted.
+ Admitted.
 
  Lemma deriv_ok r w : lang (r//w) == Lang.derivative (lang r) w.
  Proof.
@@ -180,6 +184,11 @@ Module Regexps (Letter : FiniteOrderedType).
 
  Lemma matching_ok r w : matching r w = true <-> lang r w.
  Proof.
+  split; intros.
+    - unfold matching in H.  induction w.
+      + simpl in *. apply nullable_ok. assumption.
+      + simpl in *. admit. 
+    - unfold matching. apply nullable_ok. admit.
  Admitted.
 
  (** We can now prove that being in [lang r] is decidable *)
@@ -211,7 +220,7 @@ Module Regexps (Letter : FiniteOrderedType).
   induction w.
     - simpl. right. right. left. reflexivity.
     - simpl. destruct (LetterB.eqb_spec a a0) as [Heq | Hneq].
-      +  right. left. rewrite Heq. case LetterB.eqb_spec; intros.
+      + simpl in *.   right. left. rewrite Heq. case LetterB.eqb_spec; intros.
         * admit. 
         * contradiction.
       + left. case LetterB.eqb_spec; intros.
@@ -222,7 +231,9 @@ Module Regexps (Letter : FiniteOrderedType).
  Lemma deriv_or r s w :
   (Or r s) // w = Or (r//w) (s//w).
  Proof.
-  
+    induction w.
+      - firstorder.  
+      - simpl in *.    
 
   
  Admitted.
@@ -230,6 +241,9 @@ Module Regexps (Letter : FiniteOrderedType).
  Lemma deriv_and r s w :
   (And r s) // w = And (r // w) (s // w).
  Proof.
+    induction w.
+      - firstorder.
+      - simpl in *. 
  Admitted.
 
  Lemma deriv_not r w :
@@ -402,11 +416,12 @@ Qed.
   - apply Lang.star_star. exists x0. assumption.  
  Qed.
 
- Lemma cat_star r : Cat (Star r) (Star r) === Star r.
- Proof.
+Lemma cat_star r : Cat (Star r) (Star r) === Star r.
+Proof.
  intro. split; intros; simpl in *.
-  - firstorder. apply Lang.power_app.  subst. exists (x3 + x2). admit.
+  -  firstorder.
+    exists (x3+x2). rewrite H. apply Lang.power_app; assumption.
   - firstorder. unfold Lang.cat. exists [],x; firstorder. exists 0. firstorder.
- Admitted.
+Qed.
 
 End Regexps.

@@ -5,7 +5,10 @@ Import ListNotations.
 
 Lemma app_nil {A} (l l' : list A) : l ++ l' = [] <-> l = [] /\ l' = [].
 Proof.
-Admitted.
+  split; intros.
+    - apply app_eq_nil. assumption.
+    - destruct H. rewrite H, H0. auto.
+Qed.
 
 (** Cartesian product *)
 
@@ -15,12 +18,27 @@ Definition product {A B} (l : list A) (l' : list B) : list (A * B) :=
 Lemma product_ok {A B} (l : list A) (l' : list B) x y :
   List.In (x, y) (product l l') <-> List.In x l /\ List.In y l'.
 Proof.
+  split; intros.
+    - split.
+      + unfold product in H. apply in_flat_map_Exists in H. induction H. apply in_map_iff in H. destruct H.
+          destruct H. 
+            *  apply pair_equal_spec in H. destruct H. subst. apply in_eq.
+            * apply in_cons. assumption.
+      + unfold product in H. apply in_flat_map_Exists in H. induction H. apply in_map_iff in H. destruct H.
+      destruct H. 
+        *  apply pair_equal_spec in H. destruct H. subst. assumption.
+        * assumption.
+    - destruct H.  unfold product. admit.  
 Admitted.
 
 Lemma product_length {A B} (l:list A)(l':list B) :
   length (product l l') = length l * length l'.
 Proof.
-Admitted.
+    induction l.
+      - simpl. reflexivity.
+      - unfold product. simpl. rewrite <- IHl. unfold product. 
+       rewrite app_length. f_equal. apply map_length.
+Qed.
 
 (** Equivalence of lists *)
 
@@ -45,21 +63,47 @@ Qed.
 
 Lemma eqlist_nil {A} (l : list A) : eqlist l [] -> l = [].
 Proof.
-Admitted.
+  intros. unfold eqlist in H. simpl in *. induction l.
+    - reflexivity.
+    - destruct H with a. firstorder. 
+Qed.
 
 Lemma eqlist_comm {A} (l l' : list A) : eqlist l l' -> eqlist l' l.
 Proof.
-Admitted.
+  intros. induction l.
+    - firstorder.
+    - unfold eqlist in *. intros. split; intros; apply H; assumption.
+Qed.
 
 Lemma eqlist_undup {A} (a:A) l l' :
  eqlist (a::l) l' -> In a l -> eqlist l l'.
 Proof.
-Admitted.
+  intros. unfold eqlist in *. intros. split; intros.
+    - apply H. apply in_cons. assumption.
+    - apply H in H1. apply in_inv in H1. destruct H1.
+      + subst. assumption.
+      + assumption.
+Qed.
 
 Lemma eqlist_uncons {A} (a:A) l l' :
  eqlist (a::l) (a::l') -> ~In a l -> ~In a l' -> eqlist l l'.
 Proof.
-Admitted.
+  intros. unfold eqlist in *. intros. split; intros.
+    - destruct H with n. simpl in *. destruct H4.
+      + apply H3. right. assumption.
+      + subst. firstorder. 
+      + destruct H3.
+        * right. assumption. 
+        * subst. contradiction.
+        * assumption.
+    -  destruct H with n. simpl in *. destruct H4.
+      + right. assumption.
+      + subst. firstorder. 
+      + destruct H3.
+        * right. assumption. 
+        * subst. assumption.
+        * assumption.
+Qed.
 
 (** [Incl] : inclusion of lists.
 
@@ -75,12 +119,19 @@ Global Hint Constructors Incl : core.
 
 Lemma Incl_nil {A} (l:list A) : Incl [] l.
 Proof.
-Admitted.
+  induction l; firstorder.
+Qed.
+
 Global Hint Resolve Incl_nil : core.
+
 
 Lemma Incl_len {A} (l l' : list A) : Incl l l' -> length l <= length l'.
 Proof.
-Admitted.
+  intros. induction H.
+    - firstorder.
+    - simpl. rewrite IHIncl. firstorder.
+    - simpl. apply le_n_S. assumption. 
+Qed.
 
 Global Instance Incl_PreOrder {A} : PreOrder (@Incl A).
 Proof.
@@ -110,7 +161,12 @@ Qed.
 
 Lemma Incl_singleton {A} (a:A) l : In a l -> Incl [a] l.
 Proof.
-Admitted.
+  induction l.
+    - firstorder.
+    - simpl. intros. destruct H.
+      + rewrite H. firstorder.
+      + apply IHl in H. firstorder.
+Qed.
 
 (** [sublists] generates all lists included in a first one *)
 
@@ -122,15 +178,39 @@ Fixpoint sublists {A} (l : list A) :=
     s ++ List.map (cons a) s
   end.
 
+Lemma in_sublist {A} (l :list A) : In l (sublists l).
+Proof.
+  induction l.
+    - firstorder.
+    - simpl. apply in_app_iff. right. apply in_map_iff. exists l; firstorder.
+Qed.
+(* Lemma incl_sublist {A} (l :list A) : Incl [l] (sublists l).
+Proof.
+  induction l.
+    - simpl. firstorder.
+    - simpl. apply in_app_iff. right. apply in_map_iff. exists l; firstorder.
+Qed. *)
+
 Lemma sublists_spec {A} (l l' :list A) :
  In l' (sublists l) <-> Incl l' l.
 Proof.
+  split; intros.
+    - induction  l.
+      + firstorder. subst. firstorder.
+      + simpl in *. apply in_app_or in H. destruct H. 
+        * apply IHl in H. firstorder.
+        * apply in_map_iff in H. destruct H. destruct H. subst. constructor 3.
+        admit.
 Admitted.
 
 Lemma sublists_length {A} (l:list A) :
  length (sublists l) = 2^length l.
 Proof.
-Admitted.
+  induction l.
+    - firstorder.
+    - simpl in *. rewrite app_length. rewrite IHl. f_equal.
+      rewrite <- IHl. rewrite map_length. lia.
+Qed.
 
 (** [Subset] : another inclusion predicate, but this time we ignore
    the positions and the repetitions. It is enough for all elements
@@ -142,23 +222,53 @@ Definition Subset {A} (l l' : list A) :=
 Lemma subset_notin {A} (l l' : list A) a :
  Subset l (a::l') -> ~In a l -> Subset l l'.
 Proof.
-Admitted.
+  intros. unfold Subset in *. intros. destruct H with n.
+    - assumption.
+    - subst. contradiction.
+    - apply H with n in H1. Search In. simpl in H1. destruct H1.
+      + apply H2.
+      + assumption.
+Qed.
 
 Lemma subset_nil {A} (l : list A) : Subset l [] -> l = [].
 Proof.
-Admitted.
+  intros. induction l.
+    - reflexivity.
+    - unfold Subset in *. destruct H with a. firstorder.
+Qed.
 
 Lemma incl_subset {A} (l l':list A) : Incl l l' -> Subset l l'.
 Proof.
-Admitted.
+  intros. unfold Subset. intros. induction H.
+    - assumption.
+    - simpl. right. apply IHIncl. assumption.
+    - apply in_inv in H0. simpl. destruct H0.
+      + left. assumption.
+      + right. apply IHIncl. assumption.
+Qed.
 
 (** A tricky lemma : a subset without duplicates has a smaller length.
     See Coq standard library for [NoDup]. This proof might be done
     via [List.in_split]. *)
+Lemma nodup_concat {A} (l : list A) (a : A) :
+  NoDup (a :: l) -> NoDup l.
+Proof.
+  intros. induction l.
+    - constructor.
+    - constructor 2; apply NoDup_cons_iff in H; destruct H; 
+      apply NoDup_cons_iff in H0; destruct H0; assumption.
+Qed.
 
+      
 Lemma subset_nodup_length {A} (l l' : list A) :
  Subset l l' -> NoDup l -> length l <= length l'.
 Proof.
+  intros. unfold Subset in H. induction l.
+    - simpl. lia.
+    - simpl in *. destruct IHl .
+      + intros. apply H. right. assumption.
+      + apply nodup_concat in H0. assumption.
+      + Search (S _). pose Nat.nle_succ_diag_l as H2. unfold "~" in H2.
 Admitted.
 
 (** More on [Incl] and [Subset] in RegOrder.v, where we will be able to
@@ -167,6 +277,11 @@ Admitted.
 Lemma existsb_forall {A} (f:A -> bool) l :
  existsb f l = false <-> forall x, In x l -> f x = false.
 Proof.
+  split; intros.
+    - Search existsb. induction l.
+      + firstorder.
+      + apply IHl; firstorder.
+        * simpl in *. subst. Search "||".  
 Admitted.
 
 (** Being in a list, modulo an equivalence [R] *)
@@ -196,6 +311,9 @@ Lemma subset_nodupA_length l l' :
  (forall x, In x l -> InModulo x l') -> NoDupA R l ->
  length l <= length l'.
 Proof using HR.
+  intros. firstorder. unfold InModulo in H. induction l.
+    - simpl. lia.
+    - simpl. 
 Admitted.
 
 (** Removing redundancy with respect to some decidable equivalence.
