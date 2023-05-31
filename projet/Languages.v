@@ -196,7 +196,7 @@ Qed.
 Lemma star_star L : (L★)★ == L★.
 Proof.
   intro. split; intros. 
-    - firstorder. unfold star in H. 
+    - firstorder. unfold star in H. admit.
 
     - firstorder. exists 1. apply cat_eps_r. exists x0. assumption.     
 Admitted.

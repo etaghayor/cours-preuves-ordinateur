@@ -57,6 +57,8 @@ Fixpoint derivs_bound r :=
 Lemma derivs_bound_ok r :
  length (over_derivs r) = derivs_bound r.
 Proof.
+  induction r; firstorder.
+    - simpl in *. unfold mixcat. simpl. 
 Admitted.
 
 (** The predicate we're trying to establish on [over_derivs] *)
@@ -70,6 +72,13 @@ Lemma mixcat_in r r2 l1 l2 :
  exists s l2b,
    canon (Or (Cat s r2) (OR.mk l2b)) = r /\ In s l1 /\ Incl l2b l2.
 Proof.
+  split; intros.
+    - simpl in *. unfold mixcat in H. Search map.
+      apply in_map_iff in H. destruct H. destruct H. simpl in *.
+      exists r, l2. split.
+      + admit.
+      + split.
+         
 Admitted.
 
 Lemma mixcat_stable_1 r r2 l1 l2 : Canonical r ->

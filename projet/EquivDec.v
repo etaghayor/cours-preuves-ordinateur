@@ -12,6 +12,8 @@ Definition is_empty r :=
 Lemma is_empty_spec r :
   is_empty r = true <-> r === Void.
 Proof.
+  split; intros.
+    - unfold is_empty in H. unfold exact_derivs in H.
 Admitted.
 
 (** Now, we can test regexp equivalence via double inclusion *)
@@ -22,6 +24,10 @@ Definition is_equiv r r' :=
 Lemma is_equiv_spec r r' :
   is_equiv r r' = true <-> r === r'.
 Proof.
+  split; intros.
+    - unfold is_equiv in H. apply is_empty_spec in H.
+    admit.
+    - unfold is_equiv. apply is_empty_spec. rewrite H. firstorder.
 Admitted.
 
 Lemma equiv_reflect r r' : reflect (r === r') (is_equiv r r').
@@ -45,15 +51,38 @@ Definition derivs_equiv_nb r := length (minimal_derivs r).
 (** Of course, we have less derivatives up to [equiv] than
     up to [sim] (and less than the rough upper bound [derivs_bound]). *)
 
+Lemma length_remove_dup {A : Type} f (l: list A) :
+  length (removedup f l) <= length l.
+Proof.
+  induction l.
+    - simpl. lia.
+    - simpl. case (existsb (f a) (removedup f l)) .
+      + apply Nat.le_le_succ_r. assumption.
+      + simpl. apply le_n_S. assumption.
+Qed.
+
 Lemma derivs_nb_comparison r :
   derivs_equiv_nb r <= derivs_sim_nb r <= derivs_bound r.
 Proof.
+    unfold derivs_equiv_nb, derivs_sim_nb. 
+    unfold minimal_derivs. Search removedup. split. rewrite REs.cardinal_spec.
+      - apply length_remove_dup.
+      - unfold exact_derivs. case (REs.is_empty (try_exact_derivs r 100)).
+        + unfold slow_exact_derivs. unfold try_exact_derivs. simpl.
+        Search REs.add. rewrite REsP.singleton_equal_add.
+        Search REs.diff.
+        
+        
+        apply REsP.empty_diff_2.
+        rewrite <- RegEquivDec.a_set_equation.
+  
 Admitted.
 
 (** [minimal_derivs] has no duplicates up to [equiv] *)
 
 Lemma minimal_derivs_nodup r : NoDupA equiv (minimal_derivs r).
 Proof.
+  simpl.
 Admitted.
 
 (** [minimal_derivs] is an exact list of derivatives up to [equiv] *)

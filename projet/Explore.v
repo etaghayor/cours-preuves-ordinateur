@@ -101,7 +101,14 @@ Definition PreCondition r explored seen :=
 Lemma PreCondition_init r :
   PreCondition r REs.empty (REs.singleton (canon r)).
 Proof.
-Admitted.
+  unfold PreCondition. Search REs.In. split.
+      - apply REsP.FM.union_3.
+        apply REsP.Dec.MSetDecideTestCases.test_In_singleton.
+      - split.
+        * unfold DerivSet. intros. unfold Deriv. exists []. simpl.
+          apply REsP.FM.singleton_1 in H. symmetry. assumption.
+        * unfold Hereditary. intros. apply REsP.FM.empty_iff in H. contradiction.
+Qed.
 
 Lemma PreCondition_next r explored seen x :
   let seen' := REs.diff seen explored in
@@ -110,6 +117,14 @@ Lemma PreCondition_next r explored seen x :
   PreCondition r (REs.add x explored)
                  (REs.union (allderiv1 x) (REs.remove x seen')).
 Proof.
+  intros. unfold PreCondition in *. destruct H0 as (H1,(H2,H3)). split.
+    - Search REs.union. apply REsP.FM.union_1 in H1. destruct H1 .
+      + apply REsP.FM.union_2. apply REsP.FM.add_2. assumption.
+      + apply REsP.FM.union_2.  unfold DerivSet in H2. admit.
+    - split.
+      * unfold DerivSet in *. intros. apply H2. apply a_set_equation in H0.  
+       apply REsP.FM.union_1 in H0. destruct H0.
+        + apply H2 in H1. unfold Hereditary in H3.  apply REsP.FM.union_2.  admit.
 Admitted.
 
 (** Here it could help to proceed by induction over the [rev] of some word.
@@ -120,6 +135,10 @@ Lemma hereditary_all_derivs r s set :
   Hereditary set set ->
   Deriv r s -> REs.In s set.
 Proof.
+  intros.
+    unfold Hereditary in H0. unfold Deriv in H1. destruct H1. subst.
+
+     
 Admitted.
 
 Lemma explore_partial_spec r n explored seen :
@@ -127,6 +146,9 @@ Lemma explore_partial_spec r n explored seen :
  let out := explore n explored seen in
  REs.Empty out \/ ExactDerivSet r out.
 Proof.
+  intros. unfold PreCondition in H. destruct H as (H1,(H2,H3)). unfold ExactDerivSet.
+    right. intros. split; intros.
+      -
 Admitted.
 
 Lemma explore_converges r n explored seen :

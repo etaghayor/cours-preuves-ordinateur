@@ -15,21 +15,29 @@ Qed.
 Definition product {A B} (l : list A) (l' : list B) : list (A * B) :=
  List.flat_map (fun e => map (pair e) l') l.
 
+(* Lemma pair_in  l' x y a:
+  In (x,y) (map (pair a) l') -> In y l'. *)
+
+
 Lemma product_ok {A B} (l : list A) (l' : list B) x y :
   List.In (x, y) (product l l') <-> List.In x l /\ List.In y l'.
 Proof.
   split; intros.
     - split.
-      + unfold product in H. apply in_flat_map_Exists in H. induction H. apply in_map_iff in H. destruct H.
-          destruct H. 
-            *  apply pair_equal_spec in H. destruct H. subst. apply in_eq.
-            * apply in_cons. assumption.
-      + unfold product in H. apply in_flat_map_Exists in H. induction H. apply in_map_iff in H. destruct H.
-      destruct H. 
-        *  apply pair_equal_spec in H. destruct H. subst. assumption.
-        * assumption.
-    - destruct H.  unfold product. admit.  
-Admitted.
+      + induction l; auto. simpl in *.
+        apply in_app_iff in H. destruct H.
+          * left. apply in_map_iff in H. destruct H. destruct H. 
+           apply pair_equal_spec in H. destruct H. assumption.
+          * right. apply IHl. assumption.
+      + induction l; firstorder. simpl in *.
+        apply in_app_iff in H. destruct H.
+          * apply in_map_iff in H. destruct H. destruct H.
+          apply pair_equal_spec in H. destruct H. subst. assumption.
+          * apply IHl. assumption.
+    - destruct H. unfold product. apply in_flat_map. exists x. split.
+      + assumption.
+      + apply in_map_iff. eauto.     
+Qed.
 
 Lemma product_length {A B} (l:list A)(l':list B) :
   length (product l l') = length l * length l'.
@@ -195,12 +203,13 @@ Lemma sublists_spec {A} (l l' :list A) :
  In l' (sublists l) <-> Incl l' l.
 Proof.
   split; intros.
-    - induction  l.
+    - induction l.
       + firstorder. subst. firstorder.
       + simpl in *. apply in_app_or in H. destruct H. 
         * apply IHl in H. firstorder.
-        * apply in_map_iff in H. destruct H. destruct H. subst. constructor 3.
-        admit.
+        * apply in_map_iff in H. destruct H. destruct H. subst.
+         constructor 2. admit.
+
 Admitted.
 
 Lemma sublists_length {A} (l:list A) :
@@ -225,7 +234,7 @@ Proof.
   intros. unfold Subset in *. intros. destruct H with n.
     - assumption.
     - subst. contradiction.
-    - apply H with n in H1. Search In. simpl in H1. destruct H1.
+    - apply H with n in H1. simpl in H1. destruct H1.
       + apply H2.
       + assumption.
 Qed.
@@ -268,7 +277,7 @@ Proof.
     - simpl in *. destruct IHl .
       + intros. apply H. right. assumption.
       + apply nodup_concat in H0. assumption.
-      + Search (S _). pose Nat.nle_succ_diag_l as H2. unfold "~" in H2.
+      +  pose Nat.nle_succ_diag_l as H2. unfold "~" in H2.
 Admitted.
 
 (** More on [Incl] and [Subset] in RegOrder.v, where we will be able to
@@ -278,10 +287,10 @@ Lemma existsb_forall {A} (f:A -> bool) l :
  existsb f l = false <-> forall x, In x l -> f x = false.
 Proof.
   split; intros.
-    - Search existsb. induction l.
+    - induction l.
       + firstorder.
       + apply IHl; firstorder.
-        * simpl in *. subst. Search "||".  
+        * simpl in *. subst.
 Admitted.
 
 (** Being in a list, modulo an equivalence [R] *)
@@ -313,7 +322,7 @@ Lemma subset_nodupA_length l l' :
 Proof using HR.
   intros. firstorder. unfold InModulo in H. induction l.
     - simpl. lia.
-    - simpl. 
+    - simpl in *.  
 Admitted.
 
 (** Removing redundancy with respect to some decidable equivalence.
@@ -332,14 +341,31 @@ Fixpoint removedup l :=
 
 Lemma removedup_nodup l : NoDupA R (removedup l).
 Proof using Hf.
+  Search NoDupA. induction l.
+    - simpl. apply NoDupA_nil.
+    - simpl. case (existsb (f a) (removedup l)).
+      + assumption.
+      + simpl. apply NoDupA_cons.
+        * Search InA. admit.
+        * assumption.
+
 Admitted.
 
 Lemma removedup_incl l : Incl (removedup l) l.
 Proof using f.
-Admitted.
+  induction l.
+    - simpl. auto.
+    - simpl in *. case (existsb (f a) (removedup l)).
+      + constructor 2. assumption.
+      + constructor 3. assumption.
+Qed.
 
 Lemma removedup_in l x : In x l -> InModulo x (removedup l).
 Proof using Hf HR.
+  intros. induction l.
+    - firstorder.
+    - simpl. case (existsb (f a) (removedup l) ).
+        * apply IHl. inversion H.
 Admitted.
 
 End SomeEquivalence.
